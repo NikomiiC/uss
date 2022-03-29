@@ -10,6 +10,7 @@ public class UssController {
 
     @GetMapping("/test")
     public String test(){
+        SolrJQuery sj = new SolrJQuery("+worst -place");
         return "testing";
     }
 
