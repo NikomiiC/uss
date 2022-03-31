@@ -44,7 +44,7 @@ public class Query_MoveToJQuery {
     //private List<String> listOfOpposition;
 
     @Value("#{'${StopWords}'.split(',')}")
-    String stopwords_str[] = "A,an,and,are,as,at,be,by,for,it,in,into,is,it,into,not,of,on,or,such,that,the,their,then,there,these,they,this,to,was,will,with,which,when,what,how,why".split(",");
+    String stopwords_str[] = "A,an,and,are,as,at,be,by,for,it,in,into,is,it,into,not,of,on,or,such,that,the,their,then,there,these,they,this,to,was,will,with,which,where,when,what,how,why".split(",");
     List<String> listOfStopWords = Arrays.asList(stopwords_str);
 
     String urlString = "http://localhost:8983/solr/uss";
@@ -156,15 +156,15 @@ public class Query_MoveToJQuery {
     public String StopWordsCleaning(String q) {
         String[] q_arr = q.split(" ");
         String q_afterStopWords = "";
-        List<String> listOfQuery = Arrays.asList(q_arr);
-        List<String> listOfQuery2 = listOfQuery;
+        ArrayList<String> listOfQuery = new ArrayList<>(Arrays.asList(q_arr));
+        ArrayList<String> listOfQuery2 = new ArrayList<>(listOfQuery);
 
         //['which', 'place','is','most','fun']
-        for(String s: listOfQuery) {
+        for(int i = 0; i< listOfQuery.size(); i++) {
             for (String str : listOfStopWords) {
-                if (s.equalsIgnoreCase(str)) {
+                if (listOfQuery.get(i).equalsIgnoreCase(str)) {
                     //listOfQuery.remove(i);
-                    listOfQuery2.remove(s);
+                    listOfQuery2.remove(i);
                     break;
                 }
             }
@@ -176,7 +176,7 @@ public class Query_MoveToJQuery {
         return q_afterStopWords;
     }
 
-    public SolrDocumentList StopWords(String q){
+    public SolrDocumentList StopWordsQuery(String q){
         String cleaned_q = StopWordsCleaning(q);
         return WithoutQuotesSingleTermQuery(cleaned_q);
     }

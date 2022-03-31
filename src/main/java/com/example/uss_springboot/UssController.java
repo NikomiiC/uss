@@ -56,7 +56,7 @@ public class UssController {
     public String glennTest(){
         String sampleQuery = "where are the cheap rides";
         String displayStr = "";
-        solrDocumentListReturn = qm.StopWords(sampleQuery);
+        solrDocumentListReturn = qm.StopWordsQuery(sampleQuery);
         if(solrDocumentListReturn.isEmpty()){
             displayStr = "Result not found!";
         }
