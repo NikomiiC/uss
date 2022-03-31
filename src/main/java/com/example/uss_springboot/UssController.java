@@ -51,5 +51,29 @@ public class UssController {
         }
         return displayStr;
     }
+
+    @GetMapping("/glenn")
+    public String glennTest(){
+        String sampleQuery = "where are the cheap rides";
+        String displayStr = "";
+        solrDocumentListReturn = qm.StopWords(sampleQuery);
+        if(solrDocumentListReturn.isEmpty()){
+            displayStr = "Result not found!";
+        }
+        else if(solrDocumentListReturn.size() == 1 &&
+                solrDocumentListReturn.get(0).getFirstValue(FIELD_NAME).equals(FIELD_VALUE)){
+            //INVALID SEARCH ie. empty input
+            displayStr = "invalid query";
+        }
+        else{
+            displayStr = "valid query";
+        }
+        return displayStr;
+    }
+
+    @GetMapping("/testtest")
+    public String testTest(){
+        return qm.TestGetListFromProperties();
+    }
 }
 

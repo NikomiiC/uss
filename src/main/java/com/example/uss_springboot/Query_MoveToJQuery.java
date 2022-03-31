@@ -7,10 +7,13 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
+import java.lang.reflect.Executable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,6 +24,8 @@ import java.util.List;
  *    3. Append result together
  * 2. create a list of passive list ie. but, however...
  *    1. ie. the service is good but it is expensive --> +the service is good -it is expensive
+ *    fun place but cheap -> +"fun place" +cheap
+ *    Where to go on weekends
  * 3. remove stopwords in the query
  *    1. export solr stopwords, might need add more
  *    2. Delete stopwords in the query
@@ -32,12 +37,15 @@ import java.util.List;
 public class Query_MoveToJQuery {
 
 
-
+    @Autowired
     @Value("#{'${Opposition}'.split(',')}")
-    private List<String> listOfOpposition;
+    String opposition_str[] = "but,however,on the contrary,despite".split(",");
+    List<String> listOfOpposition = Arrays.asList(opposition_str);
+    //private List<String> listOfOpposition;
 
     @Value("#{'${StopWords}'.split(',')}")
-    private List<String> listOfStopWords;
+    String stopwords_str[] = "A,an,and,are,as,at,be,by,for,it,in,into,is,it,into,not,of,on,or,such,that,the,their,then,there,these,they,this,to,was,will,with,which,when,what,how,why".split(",");
+    List<String> listOfStopWords = Arrays.asList(stopwords_str);
 
     String urlString = "http://localhost:8983/solr/uss";
     SolrClient solr = new HttpSolrClient.Builder(urlString).build();
@@ -52,7 +60,6 @@ public class Query_MoveToJQuery {
         int noOfWord = arr_splitBySpace.length;
         ArrayList<String> biWordList = new ArrayList<>();
         SolrDocumentList solrDocumentList = new SolrDocumentList();
-
         //check size
         if(noOfWord == 1 || noOfWord == 2){
             //one term  || only one pair of biWord --> call SingleTermQuery()
@@ -95,6 +102,23 @@ public class Query_MoveToJQuery {
 
     public SolrDocumentList SingleTermQuery(String q) {
 
+        query.setQuery("\""+q+"\"");
+        SolrDocumentList solrDocumentList = new SolrDocumentList();
+        //query.setRequestHandler("/spellCheckCompRH");
+        try {
+            QueryResponse response = solr.query(query);
+            solrDocumentList = response.getResults();
+            System.out.println(solrDocumentList.toString());
+        } catch (SolrServerException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return solrDocumentList;
+    }
+
+    public SolrDocumentList WithoutQuotesSingleTermQuery(String q) {
+
         query.setQuery(q);
         SolrDocumentList solrDocumentList = new SolrDocumentList();
         //query.setRequestHandler("/spellCheckCompRH");
@@ -109,4 +133,61 @@ public class Query_MoveToJQuery {
         }
         return solrDocumentList;
     }
+
+//    public SolrDocumentList InclusionExclusion(String q) {
+//        //e.g. "fun but not expensive"
+//        //should send to solr: "+fun -not expensive"
+//        //SolrDocumentList solrDocumentList = new SolrDocumentList();
+//        String newStr = "";
+//        for (String negativeWords : listOfOpposition) {
+//            if (q.contains(negativeWords)) {
+//                newStr = q.replaceAll(negativeWords, "-");
+//            } else {
+//                continue;
+//            }
+//        }
+//        StringBuilder sb = new StringBuilder(newStr);
+//        sb.insert(0,"+");
+//        System.out.println("SUP: "+sb);
+//        System.out.println("HELLO:" + SingleTermQuery(String.valueOf(sb)));
+//        return SingleTermQuery(String.valueOf(sb));
+//    }
+
+    public String StopWordsCleaning(String q) {
+        String[] q_arr = q.split(" ");
+        String q_afterStopWords = "";
+        List<String> listOfQuery = Arrays.asList(q_arr);
+        List<String> listOfQuery2 = listOfQuery;
+
+        //['which', 'place','is','most','fun']
+        for(String s: listOfQuery) {
+            for (String str : listOfStopWords) {
+                if (s.equalsIgnoreCase(str)) {
+                    //listOfQuery.remove(i);
+                    listOfQuery2.remove(s);
+                    break;
+                }
+            }
+        }
+        for(String s : listOfQuery2){
+            q_afterStopWords = q_afterStopWords + " " + s;
+        }
+        System.out.println("Q_AFTER STOPWORDS: "+ q_afterStopWords);
+        return q_afterStopWords;
+    }
+
+    public SolrDocumentList StopWords(String q){
+        String cleaned_q = StopWordsCleaning(q);
+        return WithoutQuotesSingleTermQuery(cleaned_q);
+    }
+
+
+    public String TestGetListFromProperties(){
+        System.out.println("listOfOpposition: " + listOfOpposition.toString());
+        //System.out.println("listOfStopWords: " + listOfStopWords.toString());
+
+        String aTestStr = "listOfOpposition: " + listOfOpposition.toString();
+        return aTestStr;
+    }
+
 }
