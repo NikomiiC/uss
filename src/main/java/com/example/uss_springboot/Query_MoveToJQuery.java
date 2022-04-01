@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
-import java.lang.reflect.Executable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,10 +21,14 @@ import java.util.List;
  *       ie. what a fun place --> what a, a fun, fun place
  *    2. Loop each biword with single query
  *    3. Append result together
+ *
+ *    --------------- remove this point -----------------
  * 2. create a list of passive list ie. but, however...
  *    1. ie. the service is good but it is expensive --> +the service is good -it is expensive
- *    fun place but cheap -> +"fun place" +cheap
- *    Where to go on weekends
+ *
+ *    fun place but cheap -> +"fun place" -cheap
+ *    user wont get any result of "cheap" in this query
+ *    ---------------------------------------------------
  * 3. remove stopwords in the query
  *    1. export solr stopwords, might need add more
  *    2. Delete stopwords in the query
@@ -38,13 +41,15 @@ public class Query_MoveToJQuery {
 
 
     @Autowired
-    @Value("#{'${Opposition}'.split(',')}")
-    String opposition_str[] = "but,however,on the contrary,despite".split(",");
-    List<String> listOfOpposition = Arrays.asList(opposition_str);
+    @Value("${Opposition.test}")//TODO cant get from properties, will check ltR
+    String opposition_Str;
+    String[] opposition_Arr = "but,however,on the contrary,despite".split(",");
+    List<String> listOfOpposition = Arrays.asList(opposition_Arr);
     //private List<String> listOfOpposition;
 
-    @Value("#{'${StopWords}'.split(',')}")
-    String stopwords_str[] = "A,an,and,are,as,at,be,by,for,it,in,into,is,it,into,not,of,on,or,such,that,the,their,then,there,these,they,this,to,was,will,with,which,where,when,what,how,why".split(",");
+    @Value("#{'${StopWords}'.split(',')}") //TODO cant get from properties, will check ltr
+    String[] stopwords_str = ("A,an,and,are,as,at,be,but,by,for,it,in,into,is,it,into,not,of,on,or,such,that,the," +
+            "their,then,there,these,they,this,to,was,will,with,which,where,when,what,how,why").split(",");
     List<String> listOfStopWords = Arrays.asList(stopwords_str);
 
     String urlString = "http://localhost:8983/solr/uss";
@@ -117,7 +122,7 @@ public class Query_MoveToJQuery {
         return solrDocumentList;
     }
 
-    public SolrDocumentList WithoutQuotesSingleTermQuery(String q) {
+    public SolrDocumentList SingleTermQueryWithoutQuotes(String q) {
 
         query.setQuery(q);
         SolrDocumentList solrDocumentList = new SolrDocumentList();
@@ -157,19 +162,19 @@ public class Query_MoveToJQuery {
         String[] q_arr = q.split(" ");
         String q_afterStopWords = "";
         ArrayList<String> listOfQuery = new ArrayList<>(Arrays.asList(q_arr));
-        ArrayList<String> listOfQuery2 = new ArrayList<>(listOfQuery);
+        ArrayList<String> listOfQuery_copy = new ArrayList<>(listOfQuery);
 
         //['which', 'place','is','most','fun']
         for(int i = 0; i< listOfQuery.size(); i++) {
             for (String str : listOfStopWords) {
                 if (listOfQuery.get(i).equalsIgnoreCase(str)) {
                     //listOfQuery.remove(i);
-                    listOfQuery2.remove(i);
+                    listOfQuery_copy.remove(i);
                     break;
                 }
             }
         }
-        for(String s : listOfQuery2){
+        for(String s : listOfQuery_copy){
             q_afterStopWords = q_afterStopWords + " " + s;
         }
         System.out.println("Q_AFTER STOPWORDS: "+ q_afterStopWords);
@@ -178,16 +183,16 @@ public class Query_MoveToJQuery {
 
     public SolrDocumentList StopWordsQuery(String q){
         String cleaned_q = StopWordsCleaning(q);
-        return WithoutQuotesSingleTermQuery(cleaned_q);
+        return SingleTermQueryWithoutQuotes(cleaned_q);
     }
 
+    public SolrDocumentList MixQuery(String q){
+        SolrDocumentList solrDocumentList_bi = new SolrDocumentList();
+        solrDocumentList_bi = BiQuery(q);
+        SolrDocumentList solrDocumentList_sw = new SolrDocumentList();
+        solrDocumentList_sw = StopWordsQuery(q);
+        return DuplicateCheck(solrDocumentList_bi,solrDocumentList_sw);
 
-    public String TestGetListFromProperties(){
-        System.out.println("listOfOpposition: " + listOfOpposition.toString());
-        //System.out.println("listOfStopWords: " + listOfStopWords.toString());
-
-        String aTestStr = "listOfOpposition: " + listOfOpposition.toString();
-        return aTestStr;
     }
 
 }

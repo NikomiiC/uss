@@ -1,6 +1,7 @@
 package com.example.uss_springboot;
 
 import org.apache.solr.common.SolrDocumentList;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -9,14 +10,20 @@ import java.util.List;
 @RestController
 public class UssController {
     Query_MoveToJQuery qm = new Query_MoveToJQuery();
+    SolrJQuery solrJQuery = new SolrJQuery();
     SolrDocumentList solrDocumentListReturn = new SolrDocumentList();
     final static String FIELD_NAME = "CHECK_FIELD";
     final static String FIELD_VALUE = "INVALID";
 
+    @Value("${Opposition.test}")//TODO cant get from properties, will check ltR
+    String opposition_Str;
+
     @GetMapping("/test")
     public String test(){
-        SolrJQuery sj = new SolrJQuery("+worst -place");
-        return "testing";
+//        SolrJQuery sj = new SolrJQuery("+worst -place");
+//        return "testing"
+
+        return opposition_Str;
     }
 
     @GetMapping("/documents")
@@ -37,7 +44,7 @@ public class UssController {
     public String nicoleTest(){
         String sampleQuery = "";
         String displayStr = "";
-        solrDocumentListReturn = qm.BiQuery(sampleQuery);
+        solrDocumentListReturn = solrJQuery.MixQuery(sampleQuery);
         if(solrDocumentListReturn.isEmpty()){
             displayStr = "Result not found!";
         }
@@ -71,9 +78,5 @@ public class UssController {
         return displayStr;
     }
 
-    @GetMapping("/testtest")
-    public String testTest(){
-        return qm.TestGetListFromProperties();
-    }
 }
 
