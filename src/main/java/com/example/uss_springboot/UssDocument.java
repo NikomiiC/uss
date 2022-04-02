@@ -1,6 +1,10 @@
 package com.example.uss_springboot;
 
 import org.apache.solr.client.solrj.beans.Field;
+import org.apache.solr.common.SolrDocument;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class UssDocument {
 
@@ -14,10 +18,11 @@ public class UssDocument {
     private String TitleComment;
     private String ContentComment;
     private String Url;
+    private int Count;
 
     public UssDocument(){}
 
-    public UssDocument(String docId, String user, String rating, String country, String date, String contributions, String commentLike, String titleComment, String contentComment, String url){
+    public UssDocument(String docId, String user, String rating, String country, String date, String contributions, String commentLike, String titleComment, String contentComment, String url, int count){
         DocId = docId;
         User = user;
         Rating = rating;
@@ -28,6 +33,7 @@ public class UssDocument {
         TitleComment = titleComment;
         ContentComment = contentComment;
         Url = url;
+        Count = count;
     }
 
     @Field("a_docId")
@@ -80,6 +86,11 @@ public class UssDocument {
         Url = url;
     }
 
+    @Field("a_count")
+    public void setCount(int count) {
+        Count = count;
+    }
+
     public String getDocId(){
         return DocId;
     }
@@ -117,4 +128,52 @@ public class UssDocument {
     }
 
     public String getUrl() { return Url; }
+
+    public int getCount() {
+        return Count;
+    }
+
+    public static UssDocument CreateOutput(SolrDocument temp){
+        Object id = temp.getFieldValue("a_docId");
+        String stringId = id.toString();
+        Object user = temp.getFieldValue("a_reviewer_name");
+        String stringUser = user.toString();
+        Object rating = temp.getFieldValue("a_rating");
+        String stringRating = rating.toString();
+        Object country = temp.getFieldValue("a_reviewer_location");
+        String stringCountry = country.toString();
+        Object date = temp.getFieldValue("a_comment_date");
+        String stringDate = date.toString();
+        Object contributions = temp.getFieldValue("a_reviewer_contributions");
+        String stringContributions;
+        if (contributions == null) {
+            stringContributions = "";
+        } else {
+            stringContributions = contributions.toString();
+        }
+        Object commentLike = temp.getFieldValue("a_comment_upvotes");
+        String stringCommentLike;
+        if (commentLike == null) {
+            stringCommentLike = "";
+        } else {
+            stringCommentLike = commentLike.toString();
+        }
+        Object titleComment = temp.getFieldValue("a_title_comment");
+        String stringTitleComment = titleComment.toString();
+        Object contentComment = temp.getFieldValue("a_content_comment");
+        String stringContentComment = contentComment.toString();
+        Object url = temp.getFieldValue("a_url");
+        String stringUrl = url.toString();
+        Object count = temp.getFieldValue("a_count");
+        Integer integerCount = 0;
+        if (count != null) {
+            if (count instanceof ArrayList){
+                List<Long> tempList = (ArrayList<Long>) count;
+
+                integerCount = tempList.get(0).intValue();
+            }
+        }
+
+        return new UssDocument(stringId, stringUser, stringRating, stringCountry, stringDate, stringContributions, stringCommentLike, stringTitleComment, stringContentComment, stringUrl, integerCount);
+    }
 }

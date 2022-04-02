@@ -14,6 +14,7 @@ import java.util.List;
 public class UssController {
     Query_MoveToJQuery qm = new Query_MoveToJQuery();
     SolrJQuery solrJQuery = new SolrJQuery();
+    SolrJUpdate solrJUpdate = new SolrJUpdate();
     SolrDocumentList solrDocumentListReturn = new SolrDocumentList();
     final static String FIELD_NAME = "CHECK_FIELD";
     final static String FIELD_VALUE = "INVALID";
@@ -47,42 +48,33 @@ public class UssController {
         for (int i = 0; i < solrDocumentListReturn.size(); i++){
             SolrDocument temp = solrDocumentListReturn.get(i);
 
-            Object id = temp.getFieldValue("a_docId");
-            String stringId = id.toString();
-            Object user = temp.getFieldValue("a_reviewer_name");
-            String stringUser = user.toString();
-            Object rating = temp.getFieldValue("a_rating");
-            String stringRating = rating.toString();
-            Object country = temp.getFieldValue("a_reviewer_location");
-            String stringCountry = country.toString();
-            Object date = temp.getFieldValue("a_comment_date");
-            String stringDate = date.toString();
-            Object contributions = temp.getFieldValue("a_reviewer_contributions");
-            String stringContributions;
-            if (contributions == null) {
-                stringContributions = "";
-            } else {
-                stringContributions = contributions.toString();
-            }
-            Object commentLike = temp.getFieldValue("a_comment_upvotes");
-            String stringCommentLike;
-            if (commentLike == null) {
-                stringCommentLike = "";
-            } else {
-                stringCommentLike = commentLike.toString();
-            }
-            Object titleComment = temp.getFieldValue("a_title_comment");
-            String stringTitleComment = titleComment.toString();
-            Object contentComment = temp.getFieldValue("a_content_comment");
-            String stringContentComment = contentComment.toString();
-            Object url = temp.getFieldValue("a_url");
-            String stringUrl = url.toString();
-
-            ussDocuments.add(new UssDocument(stringId, stringUser, stringRating, stringCountry, stringDate, stringContributions, stringCommentLike, stringTitleComment, stringContentComment, stringUrl));
+            ussDocuments.add(UssDocument.CreateOutput(temp));
         }
 
         // return output
         return ussDocuments;
+    }
+
+    @PostMapping("/documents/count")
+    public Boolean updateCount(String id) {
+        Boolean update = solrJUpdate.tryUpdateCount(id);
+
+        if (!update){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not able to update");
+        }
+
+        return true;
+    }
+
+    @DeleteMapping("/documents")
+    public Boolean deleteDocument(String id) {
+        Boolean update = solrJUpdate.tryDelete(id);
+
+        if (!update){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not able to delete");
+        }
+
+        return true;
     }
 
     @GetMapping("/nicole")
@@ -122,6 +114,5 @@ public class UssController {
         }
         return displayStr;
     }
-
 }
 

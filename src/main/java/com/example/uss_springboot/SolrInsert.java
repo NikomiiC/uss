@@ -2,6 +2,7 @@ package com.example.uss_springboot;
 
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.common.SolrInputDocument;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -43,7 +44,8 @@ public class SolrInsert {
         }
 
         JSONParser parser = new JSONParser();
-        List<UssDocument> documents = new ArrayList<UssDocument>();
+        //List<UssDocument> documents = new ArrayList<UssDocument>();
+        List<SolrInputDocument> documents = new ArrayList<SolrInputDocument>();
 
         try (FileReader reader = new FileReader(path)) {
             Object obj = parser.parse(reader);
@@ -67,7 +69,7 @@ public class SolrInsert {
         }
 
         try {
-            solr.addBeans(documents);
+            solr.add(documents);
             solr.commit();
         } catch (Exception e){
             e.printStackTrace();
@@ -77,7 +79,7 @@ public class SolrInsert {
         return true;
     }
 
-    private static UssDocument parseUssObject(JSONObject uss){
+    /*private static UssDocument parseUssObject(JSONObject uss){
         String docId = (String) uss.get("a_docId");
         String user = (String) uss.get("a_reviewer_name");
         String rating = (String) uss.get("a_rating");
@@ -89,6 +91,35 @@ public class SolrInsert {
         String contentComment = (String) uss.get("a_content_comment");
         String url = (String) uss.get("a_url");
 
-        return new UssDocument(docId, user, rating, country, date, contributions, commentLike, titleComment, contentComment, url);
+        return new UssDocument(docId, user, rating, country, date, contributions, commentLike, titleComment, contentComment, url, 0);
+    }*/
+
+    // Parses through the JSON object and fills the document
+    private static SolrInputDocument parseUssObject(JSONObject uss){
+        String docId = (String) uss.get("a_docId");
+        String user = (String) uss.get("a_reviewer_name");
+        String rating = (String) uss.get("a_rating");
+        String country = (String) uss.get("a_reviewer_location");
+        String date = (String) uss.get("a_comment_date");
+        String contributions = (String) uss.get("a_reviewer_contribution");
+        String commentLike = (String) uss.get("a_comment_upvotes");
+        String titleComment = (String) uss.get("a_title_comment");
+        String contentComment = (String) uss.get("a_content_comment");
+        String url = (String) uss.get("a_url");
+
+        SolrInputDocument newDoc = new SolrInputDocument();
+        newDoc.addField("a_docId", docId);
+        newDoc.addField("a_reviewer_name", user);
+        newDoc.addField("a_rating", rating);
+        newDoc.addField("a_reviewer_location", country);
+        newDoc.addField("a_comment_date", date);
+        newDoc.addField("a_reviewer_contribution", contributions);
+        newDoc.addField("a_comment_upvotes", commentLike);
+        newDoc.addField("a_title_comment", titleComment);
+        newDoc.addField("a_content_comment", contentComment);
+        newDoc.addField("a_url", url);
+        newDoc.addField("a_count", 0);
+
+        return newDoc;
     }
 }
