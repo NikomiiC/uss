@@ -106,8 +106,8 @@ public class SolrJQuery {
     }
 
     public SolrDocumentList SingleTermQuery(String q) {
-
-        query.setQuery("\""+q+"\"");
+        // TODO Ryan: i added a_content_comment pls check
+        query.setQuery("a_content_comment:\""+q+"\"");
         SolrDocumentList solrDocumentList = new SolrDocumentList();
         //query.setRequestHandler("/spellCheckCompRH");
         try {
@@ -124,7 +124,8 @@ public class SolrJQuery {
 
     public SolrDocumentList SingleTermQueryWithoutQuotes(String q) {
 
-        query.setQuery(q);
+        // TODO Ryan: i added a_content_comment pls check
+        query.setQuery("a_content_comment:" + q);
         SolrDocumentList solrDocumentList = new SolrDocumentList();
         //query.setRequestHandler("/spellCheckCompRH");
         try {

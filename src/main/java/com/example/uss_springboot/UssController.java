@@ -1,8 +1,11 @@
 package com.example.uss_springboot;
 
+import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,17 +30,59 @@ public class UssController {
     }
 
     @GetMapping("/documents")
-    public List<UssDocument> getAll(){
-        // TODO fill with the necessary list
+    public List<UssDocument> getQuery(String query){
         List<UssDocument> ussDocuments = new ArrayList<UssDocument>();
-        ussDocuments.add(new UssDocument("test", "test", "test", "test", "test", "test"));
-        return ussDocuments;
-    }
+        // Goes through the collection
+        solrDocumentListReturn = solrJQuery.MixQuery(query);
+        if(solrDocumentListReturn.isEmpty()){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "no query found");
+        }
+        else if(solrDocumentListReturn.size() == 1 &&
+                solrDocumentListReturn.get(0).getFirstValue(FIELD_NAME).equals(FIELD_VALUE)){
+            //INVALID SEARCH ie. empty input
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid query");
+        }
 
-    @PostMapping("/documents")
-    public List<UssDocument> getQuery(@RequestBody UssQuery query){
-        // TODO link up the querying portion
-        return null;
+        // Stores them into a new document format for outputting
+        for (int i = 0; i < solrDocumentListReturn.size(); i++){
+            SolrDocument temp = solrDocumentListReturn.get(i);
+
+            Object id = temp.getFieldValue("a_docId");
+            String stringId = id.toString();
+            Object user = temp.getFieldValue("a_reviewer_name");
+            String stringUser = user.toString();
+            Object rating = temp.getFieldValue("a_rating");
+            String stringRating = rating.toString();
+            Object country = temp.getFieldValue("a_reviewer_location");
+            String stringCountry = country.toString();
+            Object date = temp.getFieldValue("a_comment_date");
+            String stringDate = date.toString();
+            Object contributions = temp.getFieldValue("a_reviewer_contributions");
+            String stringContributions;
+            if (contributions == null) {
+                stringContributions = "";
+            } else {
+                stringContributions = contributions.toString();
+            }
+            Object commentLike = temp.getFieldValue("a_comment_upvotes");
+            String stringCommentLike;
+            if (commentLike == null) {
+                stringCommentLike = "";
+            } else {
+                stringCommentLike = commentLike.toString();
+            }
+            Object titleComment = temp.getFieldValue("a_title_comment");
+            String stringTitleComment = titleComment.toString();
+            Object contentComment = temp.getFieldValue("a_content_comment");
+            String stringContentComment = contentComment.toString();
+            Object url = temp.getFieldValue("a_url");
+            String stringUrl = url.toString();
+
+            ussDocuments.add(new UssDocument(stringId, stringUser, stringRating, stringCountry, stringDate, stringContributions, stringCommentLike, stringTitleComment, stringContentComment, stringUrl));
+        }
+
+        // return output
+        return ussDocuments;
     }
 
     @GetMapping("/nicole")
