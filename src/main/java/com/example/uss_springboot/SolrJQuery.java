@@ -7,11 +7,11 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.springframework.core.annotation.Order;
 
+import javax.print.DocFlavor;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * 1. biWord
@@ -55,9 +55,17 @@ public class SolrJQuery {
     SolrQuery query = new SolrQuery();
     final static String FIELD_NAME = "CHECK_FIELD";
     final static String FIELD_VALUE = "INVALID";
-    final static String FIELD_ID = "doc_id";//TODO: not sure if the field name is correct
+    final static String FIELD_DOCID = "a_docId";
+    final static String FIELD_RATING = "a_rating";
+    final static String FIELD_UPVOTES = "a_comment_upvotes";
+    final static String FIELD_COUNT = "a_count";
+    final static String FIELD_CONTRIBUTION = "a_reviewer_contribution";
+    final static String ORDER_ASC = "asc";
+    final static String ORDER_DESC = "desc";
 
-    public SolrDocumentList BiQuery(String q){
+
+
+    public SolrDocumentList BiQuery(String q, String filter, String sort){
         // split by space
         String[] arr_splitBySpace = q.split(" ");
         int noOfWord = arr_splitBySpace.length;
@@ -66,19 +74,17 @@ public class SolrJQuery {
         //check size
         if(noOfWord == 1 || noOfWord == 2){
             //one term  || only one pair of biWord --> call SingleTermQuery()
-            solrDocumentList = SingleTermQuery(q,true);
+            solrDocumentList = SingleTermQuery(q,filter,sort,true);
         }
         else if(noOfWord>2){
             for(int i = 1; i < noOfWord; i++){
-
                 biWordList.add(arr_splitBySpace[i-1] + " " + arr_splitBySpace[i]);
-
             }
             //loop SingleTermQuery
             for(String eachBiWord : biWordList){
 
                 SolrDocumentList new_solrDocumentList = new SolrDocumentList();
-                new_solrDocumentList = SingleTermQuery(eachBiWord,true);
+                new_solrDocumentList = SingleTermQuery(eachBiWord,filter,sort,true);
                 solrDocumentList = DuplicateCheck(solrDocumentList, new_solrDocumentList);
 
             }
@@ -91,13 +97,54 @@ public class SolrJQuery {
         return solrDocumentList;
     }
 
-    public SolrDocumentList SingleTermQuery(String q, boolean isDoubleQuotes) {
+
+
+    public SolrDocumentList SingleTermQuery(String q, String filter, String sort, boolean isDoubleQuotes) {
         // TODO Ryan: i added a_content_comment pls check
+
+        //TODO TESTING HERE example get filter string and sort string here, or pass all value in MixQuery
+
+        LinkedHashMap orderedSortHashMap = new LinkedHashMap<String, String>();
+        String filterValue = "RATING:[1 TO *]";
+        String sortValue = "a_count desc,a_comment_upvotes desc";
+
+        String filter_afterCheck = SetUpFilterAndSortQuery(filterValue);
+        String sort_afterCheck = SetUpFilterAndSortQuery(sortValue);
         if(isDoubleQuotes){
             query.setQuery("a_content_comment:\""+q+"\"");
         }
         else{
             query.setQuery("a_content_comment:" + q);
+        }
+
+        if(!filter_afterCheck.isEmpty()){
+            //set filter here
+            query.setFilterQueries(filter_afterCheck);
+        }
+        if(!sort_afterCheck.isEmpty()){
+            //do sort function here
+            String[] pairArr = sort_afterCheck.split(",");
+            try{
+                for(String eachPair : pairArr){
+
+                    //check asc or desc
+                    String order = eachPair.split(" ")[1];
+                    String field = eachPair.split(" ")[0];
+
+                    if(order.equalsIgnoreCase(ORDER_ASC)){
+                        query.setSort(field, SolrQuery.ORDER.asc);
+                    }
+                    else if(order.equalsIgnoreCase(ORDER_DESC)){
+                        query.setSort(field, SolrQuery.ORDER.desc);
+                    }
+                    //else is wrong order, dont do anything
+
+                }
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+
         }
         SolrDocumentList solrDocumentList = new SolrDocumentList();
         //query.setRequestHandler("/spellCheckCompRH");
@@ -105,77 +152,54 @@ public class SolrJQuery {
             QueryResponse response = solr.query(query);
             solrDocumentList = response.getResults();
             System.out.println(solrDocumentList.toString());
-        } catch (SolrServerException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (SolrServerException | IOException e) {
             e.printStackTrace();
         }
         return solrDocumentList;
     }
 
 
-//    public SolrDocumentList InclusionExclusion(String q) {
-//        //e.g. "fun but not expensive"
-//        //should send to solr: "+fun -not expensive"
-//        //SolrDocumentList solrDocumentList = new SolrDocumentList();
-//        String newStr = "";
-//        for (String negativeWords : listOfOpposition) {
-//            if (q.contains(negativeWords)) {
-//                newStr = q.replaceAll(negativeWords, "-");
-//            } else {
-//                continue;
-//            }
-//        }
-//        StringBuilder sb = new StringBuilder(newStr);
-//        sb.insert(0,"+");
-//        System.out.println("SUP: "+sb);
-//        System.out.println("HELLO:" + SingleTermQuery(String.valueOf(sb)));
-//        return SingleTermQuery(String.valueOf(sb));
-//    }
-
-
-    public SolrDocumentList StopWordsQuery(String q){
+    public SolrDocumentList StopWordsQuery(String q, String filter, String sort){
         String cleaned_q = StopWordsCleaning(q);
-        return SingleTermQuery(cleaned_q, false);
+        return SingleTermQuery(cleaned_q, filter, sort, false);
     }
 
-    public SolrDocumentList MixQuery(String q){
+    public SolrDocumentList MixQuery(String q, String filter, String sort){ //
+        //TODO add filter part here
+
         SolrDocumentList solrDocumentList_bi = new SolrDocumentList();
-        solrDocumentList_bi = BiQuery(q);
+        solrDocumentList_bi = BiQuery(q,filter,sort);
         SolrDocumentList solrDocumentList_sw = new SolrDocumentList();
-        solrDocumentList_sw = StopWordsQuery(q);
+        solrDocumentList_sw = StopWordsQuery(q,filter,sort);
         return DuplicateCheck(solrDocumentList_bi,solrDocumentList_sw);
 
     }
 
-    public SolrDocumentList FieldQuery(String q) {
+    private String SetUpFilterAndSortQuery(String value_passed) {//value_filter = a_rating:[1 TO *]
         /**
          * a drop down menu to filter some fields
-         * ie cat:electronics
+         *
+         * select all
+         * 1 and up
+         * 2 and up
+         * 3 and up
+         * 4 and up
+         * 5 only
+         *
+         * fq=RATING:[1 TO *]&fq=section:0
+         *
+         * sort=field(name,max) !!!!
          *
          * check if pass correct format for fieldqQuery
          */
-        SolrDocumentList solrDocumentList = new SolrDocumentList();
-        String[] arr_Q = q.split(":");
-        //correct format passed in
-        if(arr_Q.length == 2){
-            query.setQuery(q);
-            try {
+        String str_filterQuery = "";
 
-                QueryResponse response = solr.query(query);
-                solrDocumentList = response.getResults();
-                System.out.println(solrDocumentList.toString());
-
-            } catch (SolrServerException | IOException e) {
-                e.printStackTrace();
-            }
+        if(value_passed == null || value_passed.isEmpty()){
+            return str_filterQuery;
         }
         else{
-            //wrong format
-            solrDocumentList = SetInavlidDocList();
+            return value_passed;
         }
-
-        return solrDocumentList;
     }
 
     private SolrDocumentList SetInavlidDocList() {
@@ -187,13 +211,40 @@ public class SolrJQuery {
         return invSolrDocumentList;
     }
 
+//todo filer, sort, duplicate
+
     private SolrDocumentList DuplicateCheck(SolrDocumentList solrDocumentList, SolrDocumentList new_solrDocumentList) {
-        for(SolrDocument d : new_solrDocumentList){
-            if(!solrDocumentList.contains(d)){
-                solrDocumentList.add(d);
-            }
+        /**
+         * check solrDocumentList and new_solrDocumentList get how many result
+         *
+         */
+        ArrayList<String> docIdList = new ArrayList<>();
+        String d_id = "";
+
+        if(solrDocumentList.getNumFound()==0){
+            return new_solrDocumentList;
         }
-        return solrDocumentList;
+        else if(new_solrDocumentList.getNumFound() ==0){
+            return solrDocumentList;
+        }
+        else{
+            for(SolrDocument d : new_solrDocumentList){
+                //check here, in case solr return duplicate doc_id
+                d_id = (String)d.getFieldValue(FIELD_DOCID);
+                if(!docIdList.contains(d_id)){
+                    docIdList.add(d_id);
+                }
+            }
+
+            for(SolrDocument d : solrDocumentList){
+                d_id = (String)d.getFieldValue(FIELD_DOCID);
+                if(!docIdList.contains(d_id)){
+                    new_solrDocumentList.add(d);
+                }
+            }
+            return new_solrDocumentList;
+        }
+
     }
 
     private String StopWordsCleaning(String q) {
@@ -218,4 +269,6 @@ public class SolrJQuery {
         System.out.println("Q_AFTER STOPWORDS: "+ q_afterStopWords);
         return q_afterStopWords;
     }
+
+
 }
