@@ -96,13 +96,17 @@ public class SolrInsert {
 
     // Parses through the JSON object and fills the document
     private static SolrInputDocument parseUssObject(JSONObject uss){
-        String docId = (String) uss.get("a_docId");
+        int docId = ((Long) uss.get("a_docId")).intValue();
         String user = (String) uss.get("a_reviewer_name");
-        String rating = (String) uss.get("a_rating");
+        int rating = ((Long) uss.get("a_rating")).intValue();
         String country = (String) uss.get("a_reviewer_location");
         String date = (String) uss.get("a_comment_date");
-        String contributions = (String) uss.get("a_reviewer_contribution");
-        String commentLike = (String) uss.get("a_comment_upvotes");
+        Object obj = uss.get("a_reviewer_contribution");
+        int contributions = 0;
+        if (obj instanceof Long){
+            contributions = ((Long) uss.get("a_reviewer_contribution")).intValue();
+        }
+        int commentLike = ((Long) uss.get("a_comment_upvotes")).intValue();
         String titleComment = (String) uss.get("a_title_comment");
         String contentComment = (String) uss.get("a_content_comment");
         String url = (String) uss.get("a_url");

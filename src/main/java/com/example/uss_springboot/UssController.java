@@ -31,10 +31,10 @@ public class UssController {
     }
 
     @GetMapping("/documents")
-    public List<UssDocument> getQuery(String query){//sss&field=a_docid:>1 a_rating:>3
+    public List<UssDocument> getQuery(String query, String filter, String sort){//sss&field=a_docid:>1 a_rating:>3
         List<UssDocument> ussDocuments = new ArrayList<UssDocument>();
         // Goes through the collection
-        solrDocumentListReturn = solrJQuery.MixQuery(query,"filter str here", "sort str here");
+        solrDocumentListReturn = solrJQuery.MixQuery(query, filter, sort);
         if(solrDocumentListReturn.isEmpty()){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "no query found");
         }
