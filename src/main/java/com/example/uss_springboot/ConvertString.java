@@ -14,11 +14,17 @@ public class ConvertString {
         if (filter.startsWith("rating")){
             switch (filter) {
                 case "rating>=1": newFilter += "a_rating:[1 TO *]";
+                    break;
                 case "rating>=2": newFilter += "a_rating:[2 TO *]";
+                    break;
                 case "rating>=3": newFilter += "a_rating:[3 TO *]";
+                    break;
                 case "rating>=4": newFilter += "a_rating:[4 TO *]";
+                    break;
                 case "rating>=5": newFilter += "a_rating:[5 TO *]";
+                    break;
                 default: newFilter += "a_rating:[select all]";
+                    break;
             }
         }
 

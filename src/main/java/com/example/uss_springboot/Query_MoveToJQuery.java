@@ -102,6 +102,7 @@ public class Query_MoveToJQuery {
                 solrDocumentList.add(d);
             }
         }
+        System.out.println(solrDocumentList);
         return solrDocumentList;
     }
 

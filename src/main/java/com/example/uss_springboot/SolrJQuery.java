@@ -47,7 +47,7 @@ public class SolrJQuery {
 
 //    @Value("#{'${StopWords}'.split(',')}") //TODO cant get from properties, will check ltr
     String[] stopwords_str = ("A,an,and,are,as,at,be,but,by,for,it,in,into,is,it,into,not,of,on,or,such,that,the," +
-            "their,then,there,these,they,this,to,was,will,with,which,where,when,what,how,why").split(",");
+            "their,then,there,these,they,this,to,was,will,with,which,where,when,what,how,why,uss").split(",");
     List<String> listOfStopWords = Arrays.asList(stopwords_str);
 
     String urlString = "http://localhost:8983/solr/uss";
@@ -105,11 +105,9 @@ public class SolrJQuery {
         //TODO TESTING HERE example get filter string and sort string here, or pass all value in MixQuery
 
         LinkedHashMap orderedSortHashMap = new LinkedHashMap<String, String>();
-        String filterValue = "RATING:[1 TO *]";
-        String sortValue = "a_count desc,a_comment_upvotes desc";
 
-        String filter_afterCheck = SetUpFilterAndSortQuery(filterValue);
-        String sort_afterCheck = SetUpFilterAndSortQuery(sortValue);
+        String filter_afterCheck = SetUpFilterAndSortQuery(filter);
+        String sort_afterCheck = SetUpFilterAndSortQuery(sort);
         if(isDoubleQuotes){
             query.setQuery("a_content_comment:\""+q+"\"");
         }
@@ -155,6 +153,7 @@ public class SolrJQuery {
         } catch (SolrServerException | IOException e) {
             e.printStackTrace();
         }
+        System.out.println("SIZE OF SOLR DOCUMENT: " + solrDocumentList.size());
         return solrDocumentList;
     }
 
@@ -166,11 +165,13 @@ public class SolrJQuery {
 
     public SolrDocumentList MixQuery(String q, String filter, String sort){ //
         //TODO add filter part here
-
+        query.setRows(15000);
         SolrDocumentList solrDocumentList_bi = new SolrDocumentList();
         solrDocumentList_bi = BiQuery(q,filter,sort);
         SolrDocumentList solrDocumentList_sw = new SolrDocumentList();
         solrDocumentList_sw = StopWordsQuery(q,filter,sort);
+        System.out.println("LENGTH MIXQUERY BIWORD: " + solrDocumentList_bi.size() + "LENGTH MIXQUERY STOPWORD " + solrDocumentList_sw.size());
+        System.out.println("FILTER: " + filter + "SORT " + sort);
         return DuplicateCheck(solrDocumentList_bi,solrDocumentList_sw);
 
     }
@@ -195,9 +196,11 @@ public class SolrJQuery {
         String str_filterQuery = "";
 
         if(value_passed == null || value_passed.isEmpty()){
+            System.out.println("VALUE PASSED: " + value_passed);
             return str_filterQuery;
         }
         else{
+
             return value_passed;
         }
     }
@@ -230,18 +233,19 @@ public class SolrJQuery {
         else{
             for(SolrDocument d : new_solrDocumentList){
                 //check here, in case solr return duplicate doc_id
-                d_id = (String)d.getFieldValue(FIELD_DOCID);
+                d_id = ((ArrayList<Long>)d.getFieldValue(FIELD_DOCID)).get(0).toString();
                 if(!docIdList.contains(d_id)){
                     docIdList.add(d_id);
                 }
             }
 
             for(SolrDocument d : solrDocumentList){
-                d_id = (String)d.getFieldValue(FIELD_DOCID);
+                d_id = ((ArrayList<Long>)d.getFieldValue(FIELD_DOCID)).get(0).toString();
                 if(!docIdList.contains(d_id)){
                     new_solrDocumentList.add(d);
                 }
             }
+            System.out.println("LENGTH IS: " + new_solrDocumentList.size());
             return new_solrDocumentList;
         }
 
