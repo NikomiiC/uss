@@ -5,8 +5,10 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.params.SolrParams;
 
 import java.io.IOException;
 import java.util.*;
@@ -53,6 +55,8 @@ public class SolrJQuery {
     String urlString = "http://localhost:8983/solr/uss";
     SolrClient solr = new HttpSolrClient.Builder(urlString).build();
     SolrQuery query = new SolrQuery();
+
+
     static final String FIELD_NAME = "CHECK_FIELD";
     static final String FIELD_VALUE = "INVALID";
     static final String FIELD_DOCID = "a_docId";
@@ -66,6 +70,8 @@ public class SolrJQuery {
 
     SolrDocumentList result_solrDocumentList = new SolrDocumentList();
     String removedQuery = "";
+    String afterSpellCheck = "";
+
 
     public SolrDocumentList biQuery(String q, String filter, String sort){
         // split by space
@@ -217,7 +223,9 @@ public class SolrJQuery {
             return setInavlidDocList();
         }
 
+
         query.setRows(15000);
+
         String filter_afterCheck = setUpFilterAndSortQuery(filter);
         String sort_afterCheck = setUpFilterAndSortQuery(sort);
 
@@ -240,6 +248,45 @@ public class SolrJQuery {
 
         System.out.println("FILTER: " + filter + "SORT " + sort);
 
+        if(result_solrDocumentList.getNumFound() == (long) 0){
+            //do spell check here
+            String arrOfQ[] = q.split(" ");
+            ArrayList<String> listOfQuery = new ArrayList<>(Arrays.asList(arrOfQ));
+            query.setRequestHandler("/spell");
+            for(String s : listOfQuery){
+                //query.setQuery("a_content_comment:\""+q+"\"");
+                    query.setQuery("a_content_comment:\""+s+"\"");
+                try {
+                    QueryResponse response = solr.query(query);
+
+                    if(response.getResults().getNumFound() == 0){
+                        // do single term spell check
+
+                        SpellCheckResponse spellCheckResponse = response.getSpellCheckResponse();
+                        //System.out.println("getSpellCheckResponse : " + (response.getSpellCheckResponse() == null));
+                        List<SpellCheckResponse.Suggestion> suggestionList = spellCheckResponse.getSuggestions();
+                        for(SpellCheckResponse.Suggestion suggestion : suggestionList){
+                            int numOfSugesstion = suggestion.getNumFound();
+                            System.out.println("get suggested no: " + numOfSugesstion);
+                            //always get first result
+                            afterSpellCheck = afterSpellCheck + " " +suggestion.getAlternatives().get(0);
+                            System.out.println("afterSpellCheck: " + afterSpellCheck);
+                            break;
+                        }
+                    }
+                    else{
+                        afterSpellCheck = afterSpellCheck + " " + s;
+                        System.out.println("see else : " + afterSpellCheck);
+                    }
+
+                } catch (SolrServerException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            System.out.println("do you mean : " + afterSpellCheck.trim());
+
+        }
         return result_solrDocumentList;
 
     }

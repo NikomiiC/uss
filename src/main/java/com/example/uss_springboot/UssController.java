@@ -83,7 +83,7 @@ public class UssController {
 
     @GetMapping("/nicole")
     public String nicoleTest(){
-        String sampleQuery = "where to find a restaurant";
+        String sampleQuery = "beutiful place fod delicius";
         String displayStr = "";
         solrDocumentListReturn = solrJQuery.mixQuery(sampleQuery,"", "");
         if(solrDocumentListReturn.isEmpty()){
