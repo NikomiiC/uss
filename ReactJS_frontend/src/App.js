@@ -6,19 +6,18 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import logo from "./logo.png";
 
 const FieldSearchactions = [
-	{ label: "reviews:>=0", value: 1 },
-	{ label: "reviews:>=1", value: 2 },
-	{ label: "reviews:>=2", value: 3 },
-	{ label: "reviews:>=3", value: 4 },
-	{ label: "reviews:>=4", value: 5 },
-	{ label: "reviews:>=5", value: 6 },
+	{ label: "Rating>=1", value: 1 },
+	{ label: "Rating>=2", value: 2 },
+	{ label: "Rating>=3", value: 3 },
+	{ label: "Rating>=4", value: 4 },
+	{ label: "Rating>=5", value: 5 },
 ];
 
 const SortSearchactions = [
-	{ label: "No. of upvotes(descending)", value: 1 },
-	{ label: "No. of upvotes(ascending)", value: 2 },
-	{ label: "No. of user contributions(descending)", value: 3 },
-	{ label: "No. of user contributions(ascending)", value: 4 },
+	{ label: "Upvotes desc", value: 1 },
+	{ label: "Upvotes asc", value: 2 },
+	{ label: "Contributions desc", value: 3 },
+	{ label: "Contributions asc", value: 4 },
 ];
 
 function App() {
@@ -39,16 +38,22 @@ function App() {
 		e.preventDefault();
 		if (search === '') return;
 
-		const endpoint = `http://localhost:8080/documents?query="${search}"&filter=&sort=`;
+		console.log("FILTER BY IS: ", filterBy);
+		console.log("SORT BY IS: ", SortBy);
+		let endpoint = `http://localhost:8080/documents?query=${search}&filter=&sort=`;
 
-		if (filterBy==="" && SortBy==="") {
-			const endpoint = `http://localhost:8080/documents?query="${search}"&filter=&sort=`;
-		} else if (filterBy==="" && SortBy!=="") {
-			const endpoint = `http://localhost:8080/documents?query="${search}"&filter=&sort=1`;
-		} else {
-			const endpoint = `http://localhost:8080/documents?query="${search}"&filter=1&sort=`;
+		if (filterBy==="" && SortBy!=="") {
+			console.log("FIRST IF IS EXECUTED");
+			endpoint = `http://localhost:8080/documents?query=${search}&filter=&sort=${SortBy}`;
+		} else if (filterBy!=="" && SortBy==="") {
+			console.log("FIRST ELSE-IF IS EXECUTED");
+			endpoint = `http://localhost:8080/documents?query=${search}&filter=${filterBy}&sort=`;
+		} else if (filterBy!=="" && SortBy!=="") {
+			console.log("SECOND ELSE-IF IS EXECUTED");
+			endpoint = `http://localhost:8080/documents?query=${search}&filter=${filterBy}&sort=${SortBy}`;
 		}
 
+		console.log('ENDPOINT IS: ', endpoint);
 		// https://en.wikipedia.org/w/api.php?action=query&list=search&
 		// prop=info&inprop=url&utf8=&format=json&origin=*&srlimit=10&srsearch=${search}
 
@@ -78,21 +83,27 @@ function App() {
 	//handle filter search
 
 	const handleFieldChange = value => { 
-		console.log('F VALUE: ', value);
-		setSelectedFieldValue(value) 
-		setFilter(value.label)
-		//console.log('F FILTER BY: ', filterBy);
-		//console.log('F SORT BY: ', SortBy);
+		console.log('F VALUE: ', value.altKey);
+		if (value.altKey === false) {
+			setSelectedFieldValue("--")
+			setFilter("")
+		} else {
+			setSelectedFieldValue(value) 
+			setFilter(value.label)
+		}
 	};
 	console.log('F FILTER BY: ', filterBy);
 	console.log('F SORT BY: ', SortBy);
 
-	const handleSortChange = value => { 
-		console.log('S VALUE: ', value);
-		setSelectedSortValue(value) 
-		setSort(value.label)
-		//console.log('S SORT BY: ', SortBy);
-		//console.log('S FILTER BY: ', filterBy);
+	const handleSortChange = value => {
+		console.log('S VALUE: ', value.altKey);
+		if (value.altKey === false) {
+			setSelectedSortValue("--") 
+			setSort("")
+		} else {
+			setSelectedSortValue(value) 
+			setSort(value.label)
+		}
 	};
 	console.log('S FILTER BY: ', filterBy);
 	console.log('S SORT BY: ', SortBy);
@@ -129,6 +140,16 @@ function App() {
 	// 	console.log("SORT SEARCH RESULT IS: ", json);
 
 	// };
+
+	const addCount = value => {
+		const requestOptions = {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json'},
+			body: JSON.stringify(value)
+		}
+		fetch(`https:localhost:8080/documents/${value}`, requestOptions)
+		.then(response => console.log(response.json()))
+	}
 
 	return (
 		<div className="App">
@@ -208,19 +229,22 @@ function App() {
 
 					let commentTemp = result.contentComment.replace("[", "");
 					let comment = commentTemp.replace("]", "");
-
+					
+					let docIdTemp = result.docId.replace("[", "");
+					let docId = docIdTemp.replace("]", "")
+					
 					return (
 						
 						<div className="result" key={i}>
 							<h3>"{titleComment}"</h3>
-							<p>{commentLike} Likes</p>
+							<p>{commentLike} Upvotes</p>
 							<p><b>Rating given:</b> {rating}/5</p>
 							<p><b>Date posted</b>: {date}</p>
-							<p><b>Reviewer</b>: {user}</p>
+							<p><b>Reviewer</b>: {user} </p>
 							<p><b>Country</b>: {country}</p>
 							<p><b>Review</b>:</p>
 							<i><p dangerouslySetInnerHTML={{ __html: comment.replace(new RegExp(search, "gi"), (match)=> `<mark>${match}</mark>`) }}></p></i>
-							<a href={url} target="noreferrer">Read more</a>
+							<button><a href={url} target="noreferrer">Read more</a></button>
 						</div>
 					)
 				})}
