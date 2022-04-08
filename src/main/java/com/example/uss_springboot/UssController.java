@@ -35,7 +35,7 @@ public class UssController {
         List<UssDocument> ussDocuments = new ArrayList<UssDocument>();
 
         // Goes through the collection
-        solrDocumentListReturn = solrJQuery.MixQuery(query,
+        solrDocumentListReturn = solrJQuery.mixQuery(query,
                 ConvertString.convertField(filter),
                 ConvertString.convertSort(sort));
 
@@ -83,9 +83,9 @@ public class UssController {
 
     @GetMapping("/nicole")
     public String nicoleTest(){
-        String sampleQuery = "";
+        String sampleQuery = "where to find a restaurant";
         String displayStr = "";
-        solrDocumentListReturn = solrJQuery.MixQuery(sampleQuery,"filter str here", "sort stre here");
+        solrDocumentListReturn = solrJQuery.mixQuery(sampleQuery,"", "");
         if(solrDocumentListReturn.isEmpty()){
             displayStr = "Result not found!";
         }
