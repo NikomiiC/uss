@@ -19,6 +19,7 @@ public class UssDocument {
     private String ContentComment;
     private String Url;
     private int Count;
+    private String SpellCheck;
 
     public UssDocument(){}
 
@@ -34,6 +35,10 @@ public class UssDocument {
         ContentComment = contentComment;
         Url = url;
         Count = count;
+    }
+
+    public UssDocument(String spellCheck) {
+        SpellCheck = spellCheck;
     }
 
     @Field("a_docId")
@@ -132,6 +137,8 @@ public class UssDocument {
     public int getCount() {
         return Count;
     }
+
+    public String getSpellCheck() { return SpellCheck; }
 
     public static UssDocument CreateOutput(SolrDocument temp){
         Object id = temp.getFieldValue("a_docId");

@@ -40,7 +40,8 @@ public class UssController {
                 ConvertString.convertSort(sort));
 
         if(solrDocumentListReturn.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "no query found");
+            ussDocuments.add(new UssDocument(solrJQuery.afterSpellCheck));
+            return ussDocuments;
         }
         else if(solrDocumentListReturn.size() == 1 &&
                 solrDocumentListReturn.get(0).getFirstValue(FIELD_NAME).equals(FIELD_VALUE)){

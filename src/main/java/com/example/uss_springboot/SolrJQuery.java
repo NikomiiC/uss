@@ -70,7 +70,7 @@ public class SolrJQuery {
 
     SolrDocumentList result_solrDocumentList = new SolrDocumentList();
     String removedQuery = "";
-    String afterSpellCheck = "";
+    public String afterSpellCheck = "";
 
 
     public SolrDocumentList biQuery(String q, String filter, String sort){
