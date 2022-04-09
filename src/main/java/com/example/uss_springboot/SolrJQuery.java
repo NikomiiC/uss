@@ -219,6 +219,8 @@ public class SolrJQuery {
 
     public SolrDocumentList mixQuery(String q, String filter, String sort){ //
 
+        afterSpellCheck = "";
+
         if(q == null || q.isEmpty()){
             return setInavlidDocList();
         }
