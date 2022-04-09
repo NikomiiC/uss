@@ -151,7 +151,7 @@ public class UssDocument {
         String stringCountry = country.toString();
         Object date = temp.getFieldValue("a_comment_date");
         String stringDate = date.toString();
-        Object contributions = temp.getFieldValue("a_reviewer_contributions");
+        Object contributions = temp.getFieldValue("a_reviewer_contribution");
         String stringContributions;
         if (contributions == null) {
             stringContributions = "";

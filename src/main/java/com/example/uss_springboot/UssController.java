@@ -33,13 +33,13 @@ public class UssController {
     @GetMapping("/documents")
     public List<UssDocument> getQuery(String query, String filter, String sort){//sss&field=a_docid:>1 a_rating:>3
         List<UssDocument> ussDocuments = new ArrayList<UssDocument>();
-
+        System.out.println("QUERY IS: " + query + "FILTER IS: "+ filter + "SORT IS: " + sort);
         // Goes through the collection
         solrDocumentListReturn = solrJQuery.mixQuery(query,
                 ConvertString.convertField(filter),
                 ConvertString.convertSort(sort));
 
-        if(solrDocumentListReturn.isEmpty()){
+        if(solrDocumentListReturn.getNumFound() == (long) 0){
             ussDocuments.add(new UssDocument(solrJQuery.afterSpellCheck));
             return ussDocuments;
         }
@@ -60,7 +60,7 @@ public class UssController {
         return ussDocuments;
     }
 
-    @PostMapping("/documents/count")
+    @GetMapping("/documents/count")
     public Boolean updateCount(String id) {
         Boolean update = solrJUpdate.tryUpdateCount(id);
 
@@ -84,7 +84,7 @@ public class UssController {
 
     @GetMapping("/nicole")
     public String nicoleTest(){
-        String sampleQuery = "beutiful place fod delicius";
+        String sampleQuery = "where to fjnd a delicuis food in uss";
         String displayStr = "";
         solrDocumentListReturn = solrJQuery.mixQuery(sampleQuery,"", "");
         if(solrDocumentListReturn.isEmpty()){

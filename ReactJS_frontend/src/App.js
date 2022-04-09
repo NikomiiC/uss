@@ -59,6 +59,7 @@ function App() {
 
 		//http://localhost:8080/documents?query=${search}
 		const response = await fetch(endpoint);
+		
 
 		if (!response.ok) {
 			setError('true')
@@ -70,8 +71,13 @@ function App() {
 		const json = await response.json();
 		console.log(json);
 
-		setResults(json);
-		setSearchInfo(json);
+		if (json[0].docId === null) {
+			let spellcheck = json[0].spellCheck;
+			console.log(spellcheck);
+		} else {
+			setResults(json);
+			setSearchInfo(json);
+		}
 	}
 
 	const resetSearch = e => {
@@ -141,14 +147,15 @@ function App() {
 
 	// };
 
-	const addCount = value => {
-		const requestOptions = {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json'},
-			body: JSON.stringify(value)
-		}
-		fetch(`https:localhost:8080/documents/${value}`, requestOptions)
-		.then(response => console.log(response.json()))
+	const addCount = docId => {
+		let doc = docId.toString();
+		console.log(doc.type);
+		console.log(doc);
+
+		fetch(`http://localhost:8080/documents/count?id=${doc.toString()}`)
+		.catch(err=> console.log('ERROR: ', err))
+		//.then(response => console.log(response.json()))
+
 	}
 
 	return (
@@ -244,7 +251,7 @@ function App() {
 							<p><b>Country</b>: {country}</p>
 							<p><b>Review</b>:</p>
 							<i><p dangerouslySetInnerHTML={{ __html: comment.replace(new RegExp(search, "gi"), (match)=> `<mark>${match}</mark>`) }}></p></i>
-							<button><a href={url} target="noreferrer">Read more</a></button>
+							<a href={url} onClick={()=> addCount(docId)} target="noreferrer">Read more</a>
 						</div>
 					)
 				})}
