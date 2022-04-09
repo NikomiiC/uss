@@ -21,45 +21,46 @@ const SortSearchactions = [
 ];
 
 function App() {
+
+	// setting of states for searching, error-handling, filters, sorts, and spellchecks
 	const [search, setSearch] = useState("");
 	const [results, setResults] = useState([]);
 	const [searchInfo, setSearchInfo] = useState({});
 
 	const [errorValue, setError] = useState('false');
 
-	//const [inputValue, setValue] = useState("");
 	const [selectedFieldValue, setSelectedFieldValue] = useState(null);
 	const [selectedSortValue, setSelectedSortValue] = useState(null);
 
 	const [filterBy, setFilter] = useState("");
 	const [SortBy, setSort] = useState("");
 
+	const [spellCheckValue, setSpellCheck] = useState("");
+
+	
+	// function that handles the search query, does a GET request from backend endpoint
 	const handleSearch = async e => {
 		e.preventDefault();
 		if (search === '') return;
 
-		console.log("FILTER BY IS: ", filterBy);
-		console.log("SORT BY IS: ", SortBy);
 		let endpoint = `http://localhost:8080/documents?query=${search}&filter=&sort=`;
 
+		// if sort is set, but filter is not
 		if (filterBy==="" && SortBy!=="") {
-			console.log("FIRST IF IS EXECUTED");
 			endpoint = `http://localhost:8080/documents?query=${search}&filter=&sort=${SortBy}`;
-		} else if (filterBy!=="" && SortBy==="") {
-			console.log("FIRST ELSE-IF IS EXECUTED");
+		} // else if sort is not set, and filter is set
+
+		else if (filterBy!=="" && SortBy==="") {
 			endpoint = `http://localhost:8080/documents?query=${search}&filter=${filterBy}&sort=`;
-		} else if (filterBy!=="" && SortBy!=="") {
-			console.log("SECOND ELSE-IF IS EXECUTED");
+		} // else if both sort and filter are set
+
+		else if (filterBy!=="" && SortBy!=="") {
 			endpoint = `http://localhost:8080/documents?query=${search}&filter=${filterBy}&sort=${SortBy}`;
 		}
 
-		console.log('ENDPOINT IS: ', endpoint);
-		// https://en.wikipedia.org/w/api.php?action=query&list=search&
-		// prop=info&inprop=url&utf8=&format=json&origin=*&srlimit=10&srsearch=${search}
-
-		//http://localhost:8080/documents?query=${search}
+		console.log("endpoint is: ", endpoint);
+	
 		const response = await fetch(endpoint);
-		
 
 		if (!response.ok) {
 			setError('true')
@@ -71,82 +72,58 @@ function App() {
 		const json = await response.json();
 		console.log(json);
 
+		// if docId of first json is null, backend does spell-checking
+		// obtain spellcheck for display to use
 		if (json[0].docId === null) {
 			let spellcheck = json[0].spellCheck;
-			console.log(spellcheck);
+			setSpellCheck(spellcheck);
 		} else {
 			setResults(json);
 			setSearchInfo(json);
+			setSpellCheck("");
 		}
 	}
 
+	// if USSlogo is clicked, reset homescreen and reset everything
 	const resetSearch = e => {
 		setResults([])
 		setSearchInfo({})
 		setSearch("")
 	}
 
-	//handle filter search
-
+	// handles when user selects field to change
 	const handleFieldChange = value => { 
-		console.log('F VALUE: ', value.altKey);
+
+		// if user clicks on 'undo field search', set filter back to empty
 		if (value.altKey === false) {
 			setSelectedFieldValue("--")
-			setFilter("")
-		} else {
+			setFilter("Rating>=1")
+		} 
+		// else, set field that user has clicked as the filter
+		else {
 			setSelectedFieldValue(value) 
 			setFilter(value.label)
 		}
 	};
-	console.log('F FILTER BY: ', filterBy);
-	console.log('F SORT BY: ', SortBy);
 
+
+	// handles when user selects sort options
 	const handleSortChange = value => {
-		console.log('S VALUE: ', value.altKey);
+
+		// if user clicks on 'undo sorting', set sort back to empty
 		if (value.altKey === false) {
 			setSelectedSortValue("--") 
 			setSort("")
-		} else {
+
+		} // else, set field that user has clicked as the sort
+		else {
 			setSelectedSortValue(value) 
 			setSort(value.label)
 		}
 	};
-	console.log('S FILTER BY: ', filterBy);
-	console.log('S SORT BY: ', SortBy);
-	// const handleFieldSearch = async e => {
-	// 	console.log('E is: ', e);
-	// 	//e contains {label: ___, value: __}
 
-	// 	const endpoint = `http://localhost:8080/documents?query="${search}"&filter=4&sort=`;
-
-	// 	const response = await fetch(endpoint);
-
-	// 	if (!response.ok) {
-	// 		throw Error(response.statusText);
-	// 	} 
-
-	// 	const json = await response.json();
-	// 	console.log("FIELD SEARCH RESULT IS: ", json);
-
-	// };
-
-	// const handleSortSearch = async e => {
-	// 	console.log('E is: ', e);
-	// 	//e contains {label: ___, value: __}
-
-	// 	const endpoint = `http://localhost:8080/documents?query="${search}"&filter=4&sort=`;
-
-	// 	const response = await fetch(endpoint);
-
-	// 	if (!response.ok) {
-	// 		throw Error(response.statusText);
-	// 	} 
-
-	// 	const json = await response.json();
-	// 	console.log("SORT SEARCH RESULT IS: ", json);
-
-	// };
-
+	// handles when user clicks on 'read more'
+	// this will add the count of that particular document via the docId in the backend and in solr
 	const addCount = docId => {
 		let doc = docId.toString();
 		console.log(doc.type);
@@ -154,10 +131,10 @@ function App() {
 
 		fetch(`http://localhost:8080/documents/count?id=${doc.toString()}`)
 		.catch(err=> console.log('ERROR: ', err))
-		//.then(response => console.log(response.json()))
 
 	}
 
+	// returns display
 	return (
 		<div className="App">
 			<header>
@@ -167,7 +144,8 @@ function App() {
 						/>
 					</Link>
 				</div>
-				{/* <h1>USS Advisor</h1> */}
+
+				{/* display search bar */}
 				<form className="search-box" onSubmit={handleSearch}>
 					<input
 						type="search"
@@ -176,8 +154,13 @@ function App() {
 						onChange={e => setSearch(e.target.value)}
 					/>
 				</form>
+
+				{/* checks if user spelt words wrongly(spellcheck), if no results are found */}
+				{(spellCheckValue !== "") ? <p>Did you mean: "{spellCheckValue} " ? </p> : ''}
 				{(Object.keys(searchInfo).length !== 0 && errorValue==='false') ? <p>Search Results: {Object.keys(searchInfo).length}</p> : ''}
 				{(errorValue ==='true') ? <p>No search results found! Please refine your search</p> : '' }
+
+				{/*if documents are sent and recevied*/}
 				{(Object.keys(searchInfo).length !== 0) ?
 					<div style={{ display: 'flex', width: 750 , paddingTop: 15 }}>
 						<Row>
@@ -211,11 +194,13 @@ function App() {
 
 				}
 			</header>
+
+			{/* display each document on the page */}
 			<div className="results">
 				{results.map((result, i) => {
 					const url = `https://www.tripadvisor.com.sg/Attraction_Review-g294264-d2439664-Reviews-or11280-Universal_Studios_Singapore-Sentosa_Island.html`;
 					
-					//removing [ and ] for display
+					//removing [ and ] for display purposes
 					let titleCommentTemp = result.titleComment.replace("[", "");
 					let titleComment = titleCommentTemp.replace("]", "");
 
@@ -239,7 +224,10 @@ function App() {
 					
 					let docIdTemp = result.docId.replace("[", "");
 					let docId = docIdTemp.replace("]", "")
-					
+
+					let contributionsTemp = result.contributions.replace("[", "");
+					let contributions = contributionsTemp.replace("]", "")
+
 					return (
 						
 						<div className="result" key={i}>
@@ -247,9 +235,11 @@ function App() {
 							<p>{commentLike} Upvotes</p>
 							<p><b>Rating given:</b> {rating}/5</p>
 							<p><b>Date posted</b>: {date}</p>
-							<p><b>Reviewer</b>: {user} </p>
+							<p><b>Reviewer</b>: {user} (<i>{contributions} reviewer contributions</i>)</p>
 							<p><b>Country</b>: {country}</p>
 							<p><b>Review</b>:</p>
+
+					{/* highlights the matching words that the user queries, in yellow */}
 							<i><p dangerouslySetInnerHTML={{ __html: comment.replace(new RegExp(search, "gi"), (match)=> `<mark>${match}</mark>`) }}></p></i>
 							<a href={url} onClick={()=> addCount(docId)} target="noreferrer">Read more</a>
 						</div>
